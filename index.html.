@@ -1,0 +1,614 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Time Table Scheduling System</title>
+
+<style>
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f1f5f9;
+  color: #1e293b;
+}
+header {
+  background: #173b70;
+  color: white;
+  padding: 22px;
+  text-align: center;
+}
+header h1 { margin: 0 0 8px; }
+nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  background: #102c50;
+}
+nav button {
+  background: transparent;
+  color: white;
+  border: 0;
+  padding: 13px 15px;
+  cursor: pointer;
+}
+nav button:hover { background: #2864a8; }
+main {
+  max-width: 1100px;
+  margin: 25px auto;
+  padding: 0 15px;
+}
+.panel {
+  background: white;
+  padding: 22px;
+  margin-bottom: 20px;
+  border-radius: 10px;
+  box-shadow: 0 3px 12px #0000000d;
+}
+h2 { color: #173b70; }
+input, select {
+  width: 100%;
+  padding: 11px;
+  margin: 6px 0 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 5px;
+}
+label { font-weight: bold; font-size: 14px; }
+.primary {
+  background: #1764b0;
+  color: white;
+  border: 0;
+  border-radius: 5px;
+  padding: 11px 16px;
+  cursor: pointer;
+}
+.delete {
+  background: #c62828;
+  color: white;
+  border: 0;
+  border-radius: 4px;
+  padding: 6px 9px;
+  cursor: pointer;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 15px;
+}
+.stat {
+  background: #e4efff;
+  padding: 18px;
+  border-radius: 8px;
+}
+.stat strong { font-size: 28px; display: block; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 650px;
+}
+th, td {
+  border: 1px solid #dbe3ed;
+  padding: 10px;
+  text-align: left;
+}
+th { background: #e4efff; }
+.table-wrap { overflow-x: auto; }
+.page { display: none; }
+.page.active { display: block; }
+.small { color: #64748b; font-size: 13px; }
+footer {
+  text-align: center;
+  padding: 20px;
+  color: #64748b;
+}
+@media print {
+  header, nav, .no-print, footer { display: none !important; }
+  body { background: white; }
+  .panel { box-shadow: none; }
+}
+</style>
+</head>
+
+<body>
+<header>
+  <h1>Time Table Scheduling System</h1>
+  <p>College Lecture Management Portal</p>
+</header>
+
+<nav>
+  <button onclick="showPage('home')">🏠 Home</button>
+  <button onclick="showPage('login')">👨‍💼 Admin Login</button>
+  <button onclick="showPage('teachers')">👩‍🏫 Teachers</button>
+  <button onclick="showPage('subjects')">📚 Subjects</button>
+  <button onclick="showPage('classes')">🏫 Classes</button>
+  <button onclick="showPage('rooms')">🚪 Rooms</button>
+  <button onclick="showPage('slots')">⏰ Time Slots</button>
+  <button onclick="showPage('schedule')">🗓️ Timetable</button>
+</nav>
+
+<main>
+
+<section id="home" class="page active">
+  <div class="panel">
+    <h2>Welcome to the College Timetable Portal</h2>
+    <p>Manage teachers, subjects, classes, rooms and lecture schedules in one place.</p>
+    <button class="primary" onclick="showPage('schedule')">
+      View Timetable
+    </button>
+  </div>
+  <div class="grid">
+    <div class="stat">Teachers<strong id="teacherCount">0</strong></div>
+    <div class="stat">Subjects<strong id="subjectCount">0</strong></div>
+    <div class="stat">Classes<strong id="classCount">0</strong></div>
+    <div class="stat">Rooms<strong id="roomCount">0</strong></div>
+  </div>
+  <div class="panel">
+    <h2>Project Features</h2>
+    <ul>
+      <li>Admin login demo</li>
+      <li>Add and manage teachers and subjects</li>
+      <li>Manage classes, divisions and rooms</li>
+      <li>Create a weekly timetable manually</li>
+      <li>Check for teacher, class and room conflicts</li>
+      <li>Print the timetable</li>
+    </ul>
+  </div>
+</section>
+
+<section id="login" class="page">
+  <div class="panel">
+    <h2>Admin Login</h2>
+    <p class="small">Demo credentials: admin / admin123</p>
+    <form onsubmit="loginAdmin(event)">
+      <label>Username</label>
+      <input id="username" required>
+      <label>Password</label>
+      <input id="password" type="password" required>
+      <button class="primary">Login</button>
+    </form>
+    <p id="loginMessage"></p>
+    <button class="primary" id="logoutBtn"
+      style="display:none" onclick="logoutAdmin()">Logout</button>
+  </div>
+</section>
+
+<section id="teachers" class="page">
+  <div class="panel">
+    <h2>Add Teachers</h2>
+    <form onsubmit="addItem(event,'teachers','teacherName')">
+      <label>Teacher Name</label>
+      <input id="teacherName" placeholder="Enter teacher name" required>
+      <button class="primary">Add Teacher</button>
+    </form>
+    <div id="teachersList"></div>
+  </div>
+</section>
+
+<section id="subjects" class="page">
+  <div class="panel">
+    <h2>Add Subjects</h2>
+    <form onsubmit="addItem(event,'subjects','subjectName')">
+      <label>Subject Name</label>
+      <input id="subjectName" placeholder="e.g. Python Programming" required>
+      <button class="primary">Add Subject</button>
+    </form>
+    <div id="subjectsList"></div>
+  </div>
+</section>
+
+<section id="classes" class="page">
+  <div class="panel">
+    <h2>Add Class / Division</h2>
+    <form onsubmit="addItem(event,'classes','className')">
+      <label>Class and Division</label>
+      <input id="className" placeholder="e.g. SYBSC IT - A" required>
+      <button class="primary">Add Class</button>
+    </form>
+    <div id="classesList"></div>
+  </div>
+</section>
+
+<section id="rooms" class="page">
+  <div class="panel">
+    <h2>Add Rooms</h2>
+    <form onsubmit="addItem(event,'rooms','roomName')">
+      <label>Room Name / Number</label>
+      <input id="roomName" placeholder="e.g. Room 101" required>
+      <button class="primary">Add Room</button>
+    </form>
+    <div id="roomsList"></div>
+  </div>
+</section>
+
+<section id="slots" class="page">
+  <div class="panel">
+    <h2>Add Time Slots</h2>
+    <form onsubmit="addSlot(event)">
+      <label>Lecture Start Time</label>
+      <input type="time" id="slotStart" required>
+      <label>Lecture End Time</label>
+      <input type="time" id="slotEnd" required>
+      <button class="primary">Add Time Slot</button>
+    </form>
+    <div id="slotsList"></div>
+  </div>
+</section>
+
+<section id="schedule" class="page">
+  <div class="panel">
+    <h2>Create Timetable</h2>
+    <p class="small">Add your teachers, subjects, classes, rooms and time slots first.</p>
+
+    <form onsubmit="addSchedule(event)">
+      <label>Day</label>
+      <select id="day" required>
+        <option value="">Select day</option>
+        <option>Monday</option>
+        <option>Tuesday</option>
+        <option>Wednesday</option>
+        <option>Thursday</option>
+        <option>Friday</option>
+        <option>Saturday</option>
+      </select>
+
+      <label>Class / Division</label>
+      <select id="scheduleClass" required></select>
+
+      <label>Subject</label>
+      <select id="scheduleSubject" required></select>
+
+      <label>Teacher</label>
+      <select id="scheduleTeacher" required></select>
+
+      <label>Room</label>
+      <select id="scheduleRoom" required></select>
+
+      <label>Time Slot</label>
+      <select id="scheduleSlot" required></select>
+
+      <button class="primary">Save Lecture</button>
+    </form>
+    <p id="scheduleMessage"></p>
+  </div>
+
+  <div class="panel">
+    <h2>Weekly Timetable</h2>
+    <button class="primary no-print" onclick="window.print()">Print Timetable</button>
+    <div id="timetableList" class="table-wrap"></div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  Time Table Scheduling System | College Project
+</footer>
+
+<script>
+const keys = ['teachers', 'subjects', 'classes', 'rooms', 'slots', 'schedule'];
+let isAdmin = false;
+
+function getData(key) {
+  try {
+    return JSON.parse(localStorage.getItem('tt_' + key) || '[]');
+  } catch {
+    return [];
+  }
+}
+
+function saveData(key, data) {
+  localStorage.setItem('tt_' + key, JSON.stringify(data));
+}
+
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  refresh();
+}
+
+function loginAdmin(event) {
+  event.preventDefault();
+  const user = document.getElementById('username').value;
+  const pass = document.getElementById('password').value;
+
+  if (user === 'admin' && pass === 'admin123') {
+    isAdmin = true;
+    document.getElementById('loginMessage').textContent = 'Login successful!';
+    document.getElementById('logoutBtn').style.display = 'inline-block';
+    refresh();
+  } else {
+    document.getElementById('loginMessage').textContent =
+      'Incorrect username or password.';
+  }
+}
+
+function logoutAdmin() {
+  isAdmin = false;
+  document.getElementById('loginMessage').textContent = 'Logged out.';
+  document.getElementById('logoutBtn').style.display = 'none';
+}
+
+function requireAdmin() {
+  if (isAdmin) return true;
+  alert('Please login as admin first.');
+  showPage('login');
+  return false;
+}
+
+function addItem(event, key, inputId) {
+  event.preventDefault();
+  if (!requireAdmin()) return;
+
+  const input = document.getElementById(inputId);
+  const value = input.value.trim();
+  if (!value) return;
+
+  const data = getData(key);
+  if (data.some(x => x.name.toLowerCase() === value.toLowerCase())) {
+    alert('This item already exists.');
+    return;
+  }
+
+  data.push({ id: Date.now(), name: value });
+  saveData(key, data);
+  input.value = '';
+  refresh();
+}
+
+function addSlot(event) {
+  event.preventDefault();
+  if (!requireAdmin()) return;
+
+  const start = document.getElementById('slotStart').value;
+  const end = document.getElementById('slotEnd').value;
+
+  if (start >= end) {
+    alert('End time must be later than start time.');
+    return;
+  }
+
+  const slots = getData('slots');
+  if (slots.some(s => start < s.end && end > s.start)) {
+    alert('This time overlaps an existing time slot.');
+    return;
+  }
+
+  slots.push({ id: Date.now(), start, end });
+  slots.sort((a, b) => a.start.localeCompare(b.start));
+  saveData('slots', slots);
+  refresh();
+}
+
+function removeItem(key, id) {
+  if (!requireAdmin()) return;
+  if (!confirm('Delete this item? Related timetable entries may also be removed.')) return;
+
+  saveData(key, getData(key).filter(x => x.id !== id));
+
+  const remaining = keys.filter(k => k !== key);
+  if (['teachers','subjects','classes','rooms','slots'].includes(key)) {
+    const valid = {};
+    remaining.forEach(k => valid[k] = new Set(getData(k).map(x => x.id)));
+    const schedule = getData('schedule').filter(s =>
+      valid.teachers.has(s.teacherId) &&
+      valid.subjects.has(s.subjectId) &&
+      valid.classes.has(s.classId) &&
+      valid.rooms.has(s.roomId) &&
+      valid.slots.has(s.slotId)
+    );
+    saveData('schedule', schedule);
+  }
+
+  refresh();
+}
+
+function addSchedule(event) {
+  event.preventDefault();
+  if (!requireAdmin()) return;
+
+  const entry = {
+    id: Date.now(),
+    day: document.getElementById('day').value,
+    classId: Number(document.getElementById('scheduleClass').value),
+    subjectId: Number(document.getElementById('scheduleSubject').value),
+    teacherId: Number(document.getElementById('scheduleTeacher').value),
+    roomId: Number(document.getElementById('scheduleRoom').value),
+    slotId: Number(document.getElementById('scheduleSlot').value)
+  };
+
+  const lists = {};
+  ['classes','subjects','teachers','rooms','slots'].forEach(k => {
+    lists[k] = getData(k);
+  });
+
+  if (!lists.classes.some(x => x.id === entry.classId) ||
+      !lists.subjects.some(x => x.id === entry.subjectId) ||
+      !lists.teachers.some(x => x.id === entry.teacherId) ||
+      !lists.rooms.some(x => x.id === entry.roomId) ||
+      !lists.slots.some(x => x.id === entry.slotId)) {
+    document.getElementById('scheduleMessage').textContent =
+      'Please add and select all required details.';
+    return;
+  }
+
+  const slots = lists.slots;
+  const newSlot = slots.find(s => s.id === entry.slotId);
+  const conflict = getData('schedule').some(old => {
+    if (old.day !== entry.day) return false;
+    const oldSlot = slots.find(s => s.id === old.slotId);
+    if (!oldSlot || !(newSlot.start < oldSlot.end &&
+                      newSlot.end > oldSlot.start)) return false;
+
+    return old.teacherId === entry.teacherId ||
+           old.roomId === entry.roomId ||
+           old.classId === entry.classId;
+  });
+
+  if (conflict) {
+    document.getElementById('scheduleMessage').textContent =
+      'Conflict! The teacher, room, or class is already scheduled at this time.';
+    return;
+  }
+
+  const schedule = getData('schedule');
+  schedule.push(entry);
+  saveData('schedule', schedule);
+
+  document.getElementById('scheduleMessage').textContent =
+    'Lecture saved successfully!';
+  refresh();
+}
+
+function makeOptions(key, selectedId) {
+  const items = getData(key);
+  const select = document.getElementById(selectedId);
+  select.innerHTML = '<option value="">Select</option>';
+
+  items.forEach(item => {
+    const option = document.createElement('option');
+    option.value = item.id;
+    option.textContent = item.name ||
+      (item.start + ' - ' + item.end);
+    select.appendChild(option);
+  });
+}
+
+function makeList(key, targetId, slotMode = false) {
+  const target = document.getElementById(targetId);
+  target.innerHTML = '';
+  const items = getData(key);
+
+  if (!items.length) {
+    target.textContent = 'No records added yet.';
+    return;
+  }
+
+  const table = document.createElement('table');
+  const body = document.createElement('tbody');
+
+  items.forEach(item => {
+    const tr = document.createElement('tr');
+    const td = document.createElement('td');
+    td.textContent = slotMode
+      ? item.start + ' - ' + item.end
+      : item.name;
+    tr.appendChild(td);
+
+    const action = document.createElement('td');
+    const btn = document.createElement('button');
+    btn.className = 'delete';
+    btn.textContent = 'Delete';
+    btn.onclick = () => removeItem(key, item.id);
+    action.appendChild(btn);
+    tr.appendChild(action);
+    body.appendChild(tr);
+  });
+
+  table.appendChild(body);
+  target.appendChild(table);
+}
+
+function addCell(row, value) {
+  const td = document.createElement('td');
+  td.textContent = value;
+  row.appendChild(td);
+}
+
+function refreshTimetable() {
+  const target = document.getElementById('timetableList');
+  target.innerHTML = '';
+
+  const schedule = getData('schedule');
+  const days = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+  const slots = getData('slots').slice().sort((a,b) =>
+    a.start.localeCompare(b.start)
+  );
+
+  if (!schedule.length) {
+    target.textContent = 'No lectures scheduled yet.';
+    return;
+  }
+
+  const table = document.createElement('table');
+  const thead = document.createElement('thead');
+  const header = document.createElement('tr');
+  ['Day','Time','Class','Subject','Teacher','Room','Action']
+    .forEach(x => {
+      const th = document.createElement('th');
+      th.textContent = x;
+      header.appendChild(th);
+    });
+  thead.appendChild(header);
+  table.appendChild(thead);
+
+  const tbody = document.createElement('tbody');
+
+  schedule.sort((a,b) =>
+    days.indexOf(a.day) - days.indexOf(b.day) ||
+    (slots.find(s => s.id === a.slotId)?.start || '')
+      .localeCompare(slots.find(s => s.id === b.slotId)?.start || '')
+  );
+
+  schedule.forEach(item => {
+    const slot = slots.find(x => x.id === item.slotId);
+    const findName = (key, id) =>
+      getData(key).find(x => x.id === id)?.name || 'Unknown';
+
+    const row = document.createElement('tr');
+    addCell(row, item.day);
+    addCell(row, slot ? slot.start + ' - ' + slot.end : 'Unknown');
+    addCell(row, findName('classes', item.classId));
+    addCell(row, findName('subjects', item.subjectId));
+    addCell(row, findName('teachers', item.teacherId));
+    addCell(row, findName('rooms', item.roomId));
+
+    const td = document.createElement('td');
+    const btn = document.createElement('button');
+    btn.className = 'delete';
+    btn.textContent = 'Delete';
+    btn.onclick = () => {
+      if (!requireAdmin()) return;
+      if (confirm('Delete this lecture?')) {
+        saveData('schedule', getData('schedule').filter(x => x.id !== item.id));
+        refresh();
+      }
+    };
+    td.appendChild(btn);
+    row.appendChild(td);
+    tbody.appendChild(row);
+  });
+
+  table.appendChild(tbody);
+  target.appendChild(table);
+}
+
+function refresh() {
+  document.getElementById('teacherCount').textContent = getData('teachers').length;
+  document.getElementById('subjectCount').textContent = getData('subjects').length;
+  document.getElementById('classCount').textContent = getData('classes').length;
+  document.getElementById('roomCount').textContent = getData('rooms').length;
+
+  makeList('teachers','teachersList');
+  makeList('subjects','subjectsList');
+  makeList('classes','classesList');
+  makeList('rooms','roomsList');
+  makeList('slots','slotsList',true);
+
+  makeOptions('classes','scheduleClass');
+  makeOptions('subjects','scheduleSubject');
+  makeOptions('teachers','scheduleTeacher');
+  makeOptions('rooms','scheduleRoom');
+  makeOptions('slots','scheduleSlot');
+
+  refreshTimetable();
+}
+
+refresh();
+</script>
+</body>
+</html>
+
+        
+    
